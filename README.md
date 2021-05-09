@@ -140,4 +140,4 @@ gcloud beta run deploy multi-org-billing-alert \
 # License
 
 This library is licensed under Apache 2.0. Full license text is available in
-[LICENSE](https://github.com/guillaumeblaquiere/serverless-oracle/tree/master/LICENSE).
+[LICENSE](https://github.com/guillaumeblaquiere/multi-org-billing-alert/tree/master/LICENSE).
