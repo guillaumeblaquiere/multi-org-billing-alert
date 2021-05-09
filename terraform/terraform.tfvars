@@ -1,11 +1,11 @@
 // REQUIRED variables
 
 // The project that will host the resources (service account, pubsub, cloud run)
-runtime_project="test-terraform-313212"
+runtime_project=""
 // The project that will host the notification channel email (for sending emails)
-billing_project="test-terraform-313212"
+billing_project=""
 // The billing account on which to create the budget alerts
-billing_account="014FBB-2A1336-855F7A"
+billing_account=""
 
 // OPTIONAL variables
 //region="us-central1"
