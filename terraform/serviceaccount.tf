@@ -11,13 +11,11 @@ resource "google_project_iam_binding" "project" {
   ]
 }
 
-resource "google_billing_account_iam_binding" "billing_account_admin" {
+resource "google_billing_account_iam_member" "billing_account_admin" {
   provider = google-beta
   billing_account_id = var.billing_account
   role = "roles/billing.admin"
-  members = [
-    "serviceAccount:${google_service_account.cloud_run.email}",
-  ]
+  member = "serviceAccount:${google_service_account.cloud_run.email}"
 }
 
 resource "google_service_account" "pubsub" {
