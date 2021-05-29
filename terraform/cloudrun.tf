@@ -26,3 +26,11 @@ resource "google_cloud_run_service" "multi_org" {
   }
   depends_on = [google_project_service.cloudrun]
 }
+
+resource "google_cloud_run_service_iam_binding" "binding" {
+  location = google_cloud_run_service.multi_org.location
+  project = google_cloud_run_service.multi_org.project
+  service = google_cloud_run_service.multi_org.name
+  role = "roles/run.invoker"
+  members  = var.members
+}

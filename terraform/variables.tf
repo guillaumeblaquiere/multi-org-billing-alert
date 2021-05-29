@@ -7,6 +7,10 @@ variable "runtime_project" {
 variable "billing_account" {
   description = "The billing account on which to create the budget alerts"
 }
+variable "members" {
+  description = "The list of authorized account (user, service or group) to access to Cloud Run and PubSub topic to publish message. The fully qualified account format is required. For example user:user@email.com or group:group@email.com or serviceAccount:sa@email.com"
+  type=list(string)
+}
 
 
 variable "image_tag" {

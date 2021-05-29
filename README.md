@@ -5,7 +5,7 @@ This project creates alert billing in the billing account when it receives a mes
 * Monthly Budget
 * The email(s) to alert
 
-You can easily extend and customize this sample project. This workaround exists because of Google Cloud Billing limitations. See my [articles]() to learn more.
+You can easily extend and customize this sample project. This workaround exists because of Google Cloud Billing limitations. See my [articles](https://medium.com/google-cloud/billing-alert-with-cloud-monitoring-notification-channel-c4cfa3588feb) to learn more.
 
 # How to use
 
@@ -62,6 +62,10 @@ Start by updating terraform configuration in the `terraform.tfvars` file
 - **runtime_project**: The project that will host the resources (service account, pubsub, cloud run)
 - **billing_project**: The project that will host the notification channel email (for sending emails)
 - **billing_account**: The billing account on which to create the budget alerts 
+- **members**: The list (`[array]`) of authorized account (user, service or group) to access to Cloud Run and PubSub topic to publish message. The fully qualified account format is required. For example
+  * user:user@email.com
+  * group:group@email.com
+  * serviceAccount:sa@email.com
 
 In the `terraform.tfvars` file, you have several commented variables. Values are set by default on them, but you can
 override them if you want. 
