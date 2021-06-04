@@ -6,3 +6,4 @@
 *.iml
 terraform/*.tfstate*
 terraform/.terraform*
+perso

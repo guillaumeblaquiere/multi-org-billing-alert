@@ -14,6 +14,17 @@ import (
 	"os"
 )
 
+var defaultThresholds = []*budgetModel.ThresholdRule{ //predefined threshold
+	{
+		ThresholdPercent: 0.5,
+	},
+	{
+		ThresholdPercent: 0.9,
+	},
+	{
+		ThresholdPercent: 1.0,
+	}}
+
 func billingAlert(ctx context.Context, message *model.BillingAlert) (err error) {
 	client, err := budgetApi.NewBudgetClient(ctx)
 	if err != nil {
@@ -70,14 +81,11 @@ func billingAlert(ctx context.Context, message *model.BillingAlert) (err error) 
 }
 
 func updateBudget(ctx context.Context, client *budgetApi.BudgetClient, message *model.BillingAlert, b *budgetModel.Budget) (err error) {
-	updateBudgetAlert(b, message)
+	updatedPath := updateBudgetAlert(b, message)
 	req := &budgetModel.UpdateBudgetRequest{
 		Budget: b,
 		UpdateMask: &fieldmaskpb.FieldMask{
-			Paths: []string{ //Only these 2 fields to update. Can add more if required
-				"amount.specified_amount",
-				"notifications_rule",
-			},
+			Paths: updatedPath,
 		},
 	}
 	_, err = client.UpdateBudget(ctx, req)
@@ -94,17 +102,7 @@ func createNewBudget(ctx context.Context, client *budgetApi.BudgetClient, messag
 		BudgetFilter: &budgetModel.Filter{
 			Projects: []string{fmt.Sprintf("projects/%s", message.ProjectID)},
 		},
-		ThresholdRules: []*budgetModel.ThresholdRule{ //predefined threshold
-			{
-				ThresholdPercent: 0.5,
-			},
-			{
-				ThresholdPercent: 0.9,
-			},
-			{
-				ThresholdPercent: 1.0,
-			},
-		},
+		ThresholdRules: defaultThresholds,
 	}
 	updateBudgetAlert(b, message)
 	req := &budgetModel.CreateBudgetRequest{
@@ -119,7 +117,7 @@ func createNewBudget(ctx context.Context, client *budgetApi.BudgetClient, messag
 	return
 }
 
-func updateBudgetAlert(b *budgetModel.Budget, message *model.BillingAlert) {
+func updateBudgetAlert(b *budgetModel.Budget, message *model.BillingAlert) (updatedPath []string) {
 	b.Amount = &budgetModel.BudgetAmount{
 		BudgetAmount: &budgetModel.BudgetAmount_SpecifiedAmount{
 			SpecifiedAmount: &money.Money{
@@ -133,6 +131,25 @@ func updateBudgetAlert(b *budgetModel.Budget, message *model.BillingAlert) {
 		MonitoringNotificationChannels: message.ChannelIds,
 		DisableDefaultIamRecipients:    true, //to not disturb the Billing administrator
 	}
+	updatedPath = []string{ //Only these 2 fields to update. Can add more if required
+		"amount.specified_amount",
+		"notifications_rule",
+	}
+
+	//Optional thresholds
+	if len(message.Thresholds) > 0 {
+		updatedPath = append(updatedPath, "threshold_rules")
+
+		newThreshold := []*budgetModel.ThresholdRule{}
+		for _, threshold := range message.Thresholds {
+			newThreshold = append(newThreshold, &budgetModel.ThresholdRule{
+				ThresholdPercent: threshold,
+			})
+		}
+		b.ThresholdRules = newThreshold
+	}
+
+	return
 }
 
 func getDisplayName(message *model.BillingAlert) string {

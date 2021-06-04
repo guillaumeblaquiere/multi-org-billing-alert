@@ -9,7 +9,7 @@ You can easily extend and customize this sample project. This workaround exists 
 
 # How to use
 
-The built image is present at this location: `us-central1-docker.pkg.dev/gblaquiere-dev/public/multi-org-billing-alert`
+The latest built image is present at this location: `us-central1-docker.pkg.dev/gblaquiere-dev/public/multi-org-billing-alert:1.1`
 
 
 ## Environment variables
@@ -43,7 +43,7 @@ You it directly in your Cloud Run deployment
 
 ```
 gcloud run deploy multi-org-billing-alert \
-  --image=us-central1-docker.pkg.dev/gblaquiere-dev/public/multi-org-billing-alert \
+  --image=us-central1-docker.pkg.dev/gblaquiere-dev/public/multi-org-billing-alert:1.1 \
   --region=us-central1 \
   --service-account=serviceAccount:multi-org-billing@<PROJECT_ID>.iam.gserviceaccount.com \
   --platform=managed
@@ -102,7 +102,7 @@ BILLING_ACCOUNT=<YOUR_BILLING_ACCOUNT> BILLING_PROJECT=<BILLING_PROJECT_ID> go r
 Test the HTTP entry point
 
 ```
-gicurl -X POST -d '{"project_id": "<PROJECT_ID>","monthly_budget": 10,"emails":["<YOUR_EMAIL>"]}' localhost:8080/http
+curl -X POST -H "content-type: application/json" -d '{"project_id": "<PROJECT_ID>","monthly_budget": 10,"emails":["<YOUR_EMAIL>"]}' localhost:8080/http
 ```
 
 # Build
