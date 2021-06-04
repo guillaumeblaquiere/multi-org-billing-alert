@@ -4,6 +4,7 @@ This project creates alert billing in the billing account when it receives a mes
 * ProjectID
 * Monthly Budget
 * The email(s) to alert
+* *Optionally the custom thresholds*
 
 You can easily extend and customize this sample project. This workaround exists because of Google Cloud Billing limitations. See my [articles](https://medium.com/google-cloud/billing-alert-with-cloud-monitoring-notification-channel-c4cfa3588feb) to learn more.
 
@@ -49,6 +50,22 @@ gcloud run deploy multi-org-billing-alert \
   --platform=managed
   --set-env-vars=BILLING_ACCOUNT=<YOUR_BILLING_ACCOUNT>[,BILLING_PROJECT=<BILLING_PROJECT_ID>]
 ```
+
+### Command Sample
+
+```
+# Minimal example
+curl -X POST -H "content-type: application/json" -H "Authorization: Bearer $(gcloud auth print-identity-token)" \
+  -d '{"project_id": "<PROJECT_ID>","monthly_budget": 10,"emails":["<YOUR_EMAIL>"]}' \
+   https://<CLOUD RUN ENDPOINT>/http
+
+# With optional configuable thresholds
+curl -X POST -H "content-type: application/json" -H "Authorization: Bearer $(gcloud auth print-identity-token)" \
+  -d '{"project_id": "<PROJECT_ID>","monthly_budget": 10,"emails":["<YOUR_EMAIL>"], "thresholds":[0.1,0.5,0.85,1.0]}' \
+   https://<CLOUD RUN ENDPOINT>/http
+```
+
+*Thresholds are in percent, so `1.0` = 100%*
 
 ## Automated deployment
 
