@@ -32,5 +32,5 @@ resource "google_cloud_run_service_iam_binding" "binding" {
   project = google_cloud_run_service.multi_org.project
   service = google_cloud_run_service.multi_org.name
   role = "roles/run.invoker"
-  members  = concat(var.members, "serviceAccount:${google_service_account.pubsub.email}")
+  members  = concat(var.members, ["serviceAccount:${google_service_account.pubsub.email}"])
 }
