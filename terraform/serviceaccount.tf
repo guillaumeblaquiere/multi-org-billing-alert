@@ -22,13 +22,3 @@ resource "google_service_account" "pubsub" {
   account_id   = "pubsub-call-cloud-run"
   project = var.runtime_project
 }
-
-resource "google_cloud_run_service_iam_binding" "pubsub_call_cloud_run" {
-  project     = var.billing_project
-  service = google_cloud_run_service.multi_org.name
-  location = var.region
-  role = "roles/run.invoker"
-  members = [
-    "serviceAccount:${google_service_account.pubsub.email}",
-  ]
-}
