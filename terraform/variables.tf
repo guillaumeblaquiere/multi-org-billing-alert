@@ -15,7 +15,7 @@ variable "members" {
 
 
 variable "image_tag" {
-  default= "us-central1-docker.pkg.dev/gblaquiere-dev/public/multi-org-billing-alert:1.1"
+  default= "us-central1-docker.pkg.dev/gblaquiere-dev/public/multi-org-billing-alert:1.2"
 }
 variable "region" {
   default = "us-central1"

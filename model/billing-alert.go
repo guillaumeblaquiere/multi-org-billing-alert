@@ -5,5 +5,5 @@ type BillingAlert struct {
 	MonthlyBudget float32   `json:"monthly_budget"`
 	Emails        []string  `json:"emails"`
 	Thresholds    []float64 `json:"thresholds""`
-	ChannelIds    []string
+	ChannelIds    []string  `json:"-""`
 }

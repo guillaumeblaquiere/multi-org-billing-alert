@@ -6,11 +6,16 @@ This project creates alert billing in the billing account when it receives a mes
 * The email(s) to alert
 * *Optionally the custom thresholds*
 
-You can easily extend and customize this sample project. This workaround exists because of Google Cloud Billing limitations. See my [articles](https://medium.com/google-cloud/billing-alert-with-cloud-monitoring-notification-channel-c4cfa3588feb) to learn more.
+You can also `GET` the existing alert set on a `ProjectId`, and `DELETE` an existing alert on a `ProjectId`
+
+You can easily extend and customize this sample project. 
+
+
+This workaround exists because of Google Cloud Billing limitations. See my [articles](https://medium.com/google-cloud/billing-alert-with-cloud-monitoring-notification-channel-c4cfa3588feb) to learn more.
 
 # How to use
 
-The latest built image is present at this location: `us-central1-docker.pkg.dev/gblaquiere-dev/public/multi-org-billing-alert:1.1`
+The latest built image is present at this location: `us-central1-docker.pkg.dev/gblaquiere-dev/public/multi-org-billing-alert:1.2`
 
 
 ## Environment variables
@@ -63,6 +68,12 @@ curl -X POST -H "content-type: application/json" -H "Authorization: Bearer $(gcl
 curl -X POST -H "content-type: application/json" -H "Authorization: Bearer $(gcloud auth print-identity-token)" \
   -d '{"project_id": "<PROJECT_ID>","monthly_budget": 10,"emails":["<YOUR_EMAIL>"], "thresholds":[0.1,0.5,0.85,1.0]}' \
    https://<CLOUD RUN ENDPOINT>/http
+   
+# Get an existing budget on a project
+curl http://localhost:8080/http/projectid/<PROJECT_ID>
+
+# Delete an existing budget on a project
+curl -X DELETE http://localhost:8080/http/projectid/<PROJECT_ID>
 ```
 
 *Thresholds are in percent, so `1.0` = 100%*
@@ -120,6 +131,8 @@ Test the HTTP entry point
 
 ```
 curl -X POST -H "content-type: application/json" -d '{"project_id": "<PROJECT_ID>","monthly_budget": 10,"emails":["<YOUR_EMAIL>"]}' localhost:8080/http
+curl http://localhost:8080/http/projectid/<PROJECT_ID>
+curl -X DELETE http://localhost:8080/http/projectid/<PROJECT_ID>
 ```
 
 # Build

@@ -1,4 +1,4 @@
-package internal
+package notificationChannelApi
 
 import (
 	"cloud.google.com/go/compute/metadata"
@@ -12,17 +12,32 @@ import (
 	"os"
 )
 
-func getChannelIDs(ctx context.Context, message *model.BillingAlert) (err error) {
+var client *monitoringApi.NotificationChannelClient
+var EmailAddressLabelKey = "email_address"
+
+//Initialise the client at startup
+func init() {
+	var err error
+	ctx := context.Background()
+	client, err = monitoringApi.NewNotificationChannelClient(ctx)
+	if err != nil {
+		log.Panicf("monitoringApi.NewNotificationChannelClient: %+v\n", err)
+	}
+}
+
+func GetChannelID(ctx context.Context, channelId string) (channel *monitoring.NotificationChannel, err error) {
+	req := &monitoring.GetNotificationChannelRequest{
+		Name: channelId,
+	}
+	channel, err = client.GetNotificationChannel(ctx, req)
+	return
+}
+
+func GetChannelIDs(ctx context.Context, message *model.BillingAlert) (err error) {
 
 	billingProject, err := getBillingProject()
 	if err != nil {
 		log.Printf("getBillingProject(): %+v\n", err)
-		return err
-	}
-
-	client, err := monitoringApi.NewNotificationChannelClient(ctx)
-	if err != nil {
-		log.Printf("monitoringApi.NewNotificationChannelClient: %+v\n", err)
 		return err
 	}
 
@@ -32,7 +47,7 @@ func getChannelIDs(ctx context.Context, message *model.BillingAlert) (err error)
 		if i > 0 {
 			filter += " OR "
 		}
-		filter += fmt.Sprintf("labels.email_address='%s'", v)
+		filter += fmt.Sprintf("labels.%s='%s'", EmailAddressLabelKey, v)
 	}
 
 	req := &monitoring.ListNotificationChannelsRequest{
@@ -62,7 +77,7 @@ func getChannelIDs(ctx context.Context, message *model.BillingAlert) (err error)
 		return err
 	}
 
-	//Add to message
+	//Add to Message
 	for _, notificationChannel := range existingNotificationChannels {
 		message.ChannelIds = append(message.ChannelIds, notificationChannel.GetName())
 	}
@@ -84,7 +99,7 @@ func createMissingNotificationChannel(ctx context.Context, client *monitoringApi
 	for _, email := range message.Emails {
 		found := false
 		for _, notificationChannel := range *notificationChannels {
-			if email == notificationChannel.Labels["email_address"] {
+			if email == notificationChannel.Labels[EmailAddressLabelKey] {
 				found = true
 			}
 		}
@@ -94,7 +109,7 @@ func createMissingNotificationChannel(ctx context.Context, client *monitoringApi
 					Type:        "email",
 					DisplayName: fmt.Sprintf("alert-billing-%s", email),
 					Labels: map[string]string{
-						"email_address": email,
+						EmailAddressLabelKey: email,
 					},
 				},
 				Name: project,
