@@ -14,7 +14,7 @@ This workaround exists because of Google Cloud Billing limitations. See my [arti
 
 # How to use
 
-The latest built image is present at this location: `us-central1-docker.pkg.dev/gblaquiere-dev/public/multi-org-billing-alert:1.2`
+The latest built image is present at this location: `us-central1-docker.pkg.dev/gblaquiere-dev/public/multi-org-billing-alert:1.3`
 
 ## JSON format
 
