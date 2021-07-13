@@ -16,6 +16,8 @@ func main() {
 	r.HandleFunc("/http", handler.UpsertBudgetAlert).Methods(http.MethodPost)
 	r.HandleFunc("/http/projectid/{projectid}", handler.GetBudgetAlert).Methods(http.MethodGet)
 	r.HandleFunc("/http/projectid/{projectid}", handler.DeleteBudgetAlert).Methods(http.MethodDelete)
+	r.HandleFunc("/http/alertname/{alertname}", handler.GetBudgetAlert).Methods(http.MethodGet)
+	r.HandleFunc("/http/alertname/{alertname}", handler.DeleteBudgetAlert).Methods(http.MethodDelete)
 	http.Handle("/", r)
 
 	port := os.Getenv("PORT")

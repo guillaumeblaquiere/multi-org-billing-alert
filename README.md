@@ -1,7 +1,7 @@
 # Overview
 This project creates alert billing in the billing account when it receives a message mentioning
 
-* ProjectID
+* ProjectID(s)
 * Monthly Budget
 * The email(s) to alert
 * *Optionally the custom thresholds*
@@ -10,13 +10,32 @@ You can also `GET` the existing alert set on a `ProjectId`, and `DELETE` an exis
 
 You can easily extend and customize this sample project. 
 
-
 This workaround exists because of Google Cloud Billing limitations. See my [articles](https://medium.com/google-cloud/billing-alert-with-cloud-monitoring-notification-channel-c4cfa3588feb) to learn more.
 
 # How to use
 
 The latest built image is present at this location: `us-central1-docker.pkg.dev/gblaquiere-dev/public/multi-org-billing-alert:1.2`
 
+## JSON format
+
+```
+{
+   "project_id":"<PROJECT_ID>",
+   "monthly_budget": FLOAT,
+   "emails":[
+      "<YOUR_EMAILS>"
+   ],
+   "thresholds":[
+      FLOATS
+   ],
+   "group_alert":{
+      "name":"<ALERT_NAME>",
+      "project_ids":[
+         "<YOUR_PROJECT_IDS>"
+      ]
+   }
+}
+```
 
 ## Environment variables
 
@@ -58,25 +77,49 @@ gcloud run deploy multi-org-billing-alert \
 
 ### Command Sample
 
+**Create and Update**
+
+Create and update are the same. The app detects the previous existence of the alert, based on a defined naming convention.
 ```
 # Minimal example
 curl -X POST -H "content-type: application/json" -H "Authorization: Bearer $(gcloud auth print-identity-token)" \
-  -d '{"project_id": "<PROJECT_ID>","monthly_budget": 10,"emails":["<YOUR_EMAIL>"]}' \
+  -d '{"project_id": "<PROJECT_ID>","monthly_budget": 10,"emails":["<YOUR_EMAILS>"]}' \
    https://<CLOUD RUN ENDPOINT>/http
 
 # With optional configuable thresholds
 curl -X POST -H "content-type: application/json" -H "Authorization: Bearer $(gcloud auth print-identity-token)" \
-  -d '{"project_id": "<PROJECT_ID>","monthly_budget": 10,"emails":["<YOUR_EMAIL>"], "thresholds":[0.1,0.5,0.85,1.0]}' \
+  -d '{"project_id": "<PROJECT_ID>","monthly_budget": 10,"emails":["<YOUR_EMAILS>"], "thresholds":[0.1,0.5,0.85,1.0]}' \
    https://<CLOUD RUN ENDPOINT>/http
-   
+```
+*Thresholds are in percent, so `1.0` = 100%*
+
+
+**Getting and Deleting**
+
+```
 # Get an existing budget on a project
-curl http://localhost:8080/http/projectid/<PROJECT_ID>
+curl http://localhost:8080/http/alertname/<PROJECT_ID>
 
 # Delete an existing budget on a project
-curl -X DELETE http://localhost:8080/http/projectid/<PROJECT_ID>
+curl -X DELETE http://localhost:8080/http/alertname/<PROJECT_ID>
 ```
 
-*Thresholds are in percent, so `1.0` = 100%*
+**Multi projects alert case**
+
+In some situation, you need to create multi-projects alert. You can use the `group_alert` JSON object to fill in your 
+project ids list and a name for this alert.
+
+```
+# 
+curl -X POST -H "content-type: application/json" -H "Authorization: Bearer $(gcloud auth print-identity-token)" \
+  -d '{"monthly_budget": 10,"emails":["<YOUR_EMAILS>"], "group_alert":{"name":"<ALERT_NAME>","project_ids":["<YOUR_PROJECT_IDS>"]}}' \
+   https://<CLOUD RUN ENDPOINT>/http
+
+```
+* *If `project_id` and `group_alert.project_ids` are provided, the list are merged.*
+* *If `group_alert.project_ids` is provided without `group_alert.name`, an error is raised*
+* *If `group_alert.name` is provided without `group_alert.project_ids`, the name is ignored*
+
 
 ## Automated deployment
 

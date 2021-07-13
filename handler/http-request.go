@@ -2,6 +2,7 @@ package handler
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"gblaquiere.dev/multi-org-billing-alert/internal"
 	"gblaquiere.dev/multi-org-billing-alert/internal/httperrors"
@@ -17,13 +18,18 @@ import (
 */
 
 var projectIdParam = "projectid"
+var alertNameParam = "alertname"
 
 func DeleteBudgetAlert(w http.ResponseWriter, r *http.Request) {
 
-	vars := mux.Vars(r)
-	projectId := vars[projectIdParam]
+	name, err := getAlertName(r)
 
-	err := internal.DeleteBillingAlert(r.Context(), projectId)
+	if err != nil {
+		http.Error(w, err.Error(), httperrors.GetHttpCode(err))
+		return
+	}
+
+	err = internal.DeleteBillingAlert(r.Context(), name)
 	if err != nil {
 		log.Printf("internal.DeleteBillingAlert: %v\n", err)
 		http.Error(w, err.Error(), httperrors.GetHttpCode(err))
@@ -32,10 +38,15 @@ func DeleteBudgetAlert(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetBudgetAlert(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	projectId := vars[projectIdParam]
 
-	billingAlert, err := internal.GetBillingAlert(r.Context(), projectId)
+	name, err := getAlertName(r)
+
+	if err != nil {
+		http.Error(w, err.Error(), httperrors.GetHttpCode(err))
+		return
+	}
+
+	billingAlert, err := internal.GetBillingAlert(r.Context(), name)
 	if err != nil {
 		log.Printf("internal.GetBillingAlert: %v\n", err)
 		http.Error(w, err.Error(), httperrors.GetHttpCode(err))
@@ -52,6 +63,22 @@ func GetBudgetAlert(w http.ResponseWriter, r *http.Request) {
 	w.Write(json)
 }
 
+func getAlertName(r *http.Request) (name string, err error) {
+	vars := mux.Vars(r)
+	projectId := vars[projectIdParam]
+	alertName := vars[alertNameParam]
+
+	if projectId != "" && alertName != "" && projectId != alertName {
+		return "", httperrors.New(errors.New("projectID and AlertName provided and different"), http.StatusBadRequest)
+	}
+
+	name = projectId
+	if alertName != "" {
+		name = alertName
+	}
+	return
+}
+
 func UpsertBudgetAlert(w http.ResponseWriter, r *http.Request) {
 
 	var billing model.BillingAlert
@@ -61,13 +88,14 @@ func UpsertBudgetAlert(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, fmt.Sprintf("Bad Request %q", err), http.StatusBadRequest)
 		return
 	}
-	log.Printf("PubSub message content:\n %s\n", string(body))
+	log.Printf("Message content:\n %s\n", string(body))
 
 	if err := json.Unmarshal(body, &billing); err != nil {
 		log.Printf("json.Unmarshal: %v\n", err)
 		http.Error(w, fmt.Sprintf("Bad Request %q", err), http.StatusBadRequest)
 		return
 	}
+
 	err = internal.CreateBillingAlert(r.Context(), &billing)
 	if err != nil {
 		log.Printf("internal.CreateBillingAlert: %v\n", err)
