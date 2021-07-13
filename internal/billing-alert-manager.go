@@ -12,10 +12,22 @@ import (
 )
 
 func CreateBillingAlert(ctx context.Context, message *model.BillingAlert) (err error) {
+
+	//clean up
+	if message.GroupAlert != nil && len(message.GroupAlert.ProjectIds) == 0 {
+		message.GroupAlert.AlertName = ""
+	}
+
 	errMessage := ""
-	if message.ProjectID == "" {
+	if message.GroupAlert != nil && len(message.GroupAlert.ProjectIds) > 0 && message.GroupAlert.AlertName == "" {
+		errMessage += "List of project IDs provided without alert name\n"
+	}
+
+	// If no group of projectIds, clean the potential alert Name
+	if message.ProjectID == "" && message.GroupAlert == nil {
 		errMessage += "projectid: ProjectId can't be null or empty\n"
 	}
+
 	if len(message.Emails) == 0 {
 		errMessage += "emails: Notification email list must contain at least one email to notify\n"
 

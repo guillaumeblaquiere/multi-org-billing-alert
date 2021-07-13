@@ -1,9 +1,15 @@
 package model
 
 type BillingAlert struct {
-	ProjectID     string    `json:"project_id"`
-	MonthlyBudget float32   `json:"monthly_budget"`
-	Emails        []string  `json:"emails"`
-	Thresholds    []float64 `json:"thresholds""`
-	ChannelIds    []string  `json:"-""`
+	ProjectID     string      `json:"project_id,omitempty"`
+	GroupAlert    *GroupAlert `json:"group_alert,omitempty"`
+	MonthlyBudget float32     `json:"monthly_budget"`
+	Emails        []string    `json:"emails"`
+	Thresholds    []float64   `json:"thresholds"`
+	ChannelIds    []string    `json:"-"`
+}
+
+type GroupAlert struct {
+	ProjectIds []string `json:"project_ids,omitempty"`
+	AlertName  string   `json:"name,omitempty"`
 }
