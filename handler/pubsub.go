@@ -35,7 +35,7 @@ func HandlePubsubMessage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = internal.CreateBillingAlert(r.Context(), &billing)
+	_, err = internal.CreateBillingAlert(r.Context(), &billing)
 	if err != nil {
 		log.Printf("internal.CreateBillingAlert: %v\n", err)
 		http.Error(w, "Bad Request", http.StatusBadRequest)

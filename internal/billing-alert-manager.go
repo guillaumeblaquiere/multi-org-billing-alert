@@ -11,7 +11,7 @@ import (
 	"net/http"
 )
 
-func CreateBillingAlert(ctx context.Context, message *model.BillingAlert) (err error) {
+func CreateBillingAlert(ctx context.Context, message *model.BillingAlert) (billingAlert *model.BillingAlert, err error) {
 
 	//clean up
 	if message.GroupAlert != nil && len(message.GroupAlert.ProjectIds) == 0 {
@@ -42,17 +42,17 @@ func CreateBillingAlert(ctx context.Context, message *model.BillingAlert) (err e
 	}
 
 	if errMessage != "" {
-		return httperrors.New(errors.New(errMessage), http.StatusBadRequest)
+		return nil, httperrors.New(errors.New(errMessage), http.StatusBadRequest)
 	}
 
 	//Get the channelIDs list for all the email
 	err = notificationChannelApi.GetChannelIDs(ctx, message)
 	if err != nil {
-		return err
+		return
 	}
 
 	//Create or update the alert budgetApi
-	err = billingAlertApi.UpsertBillingAlert(ctx, message)
+	billingAlert, err = billingAlertApi.UpsertBillingAlert(ctx, message)
 	return
 }
 
@@ -66,12 +66,12 @@ func GetBillingAlert(ctx context.Context, projectId string) (billingAlert *model
 	return
 }
 
-func DeleteBillingAlert(ctx context.Context, projectId string) (err error) {
+func DeleteBillingAlert(ctx context.Context, projectId string) (billingAlert *model.BillingAlert, err error) {
 
 	if projectId == "" {
 		log.Printf("no project ID parameter\n")
-		return httperrors.New(errors.New("projectId not provided"), http.StatusBadRequest)
+		return nil, httperrors.New(errors.New("projectId not provided"), http.StatusBadRequest)
 	}
-	err = billingAlertApi.DeleteBillingAlert(ctx, projectId)
+	billingAlert, err = billingAlertApi.DeleteBillingAlert(ctx, projectId)
 	return
 }

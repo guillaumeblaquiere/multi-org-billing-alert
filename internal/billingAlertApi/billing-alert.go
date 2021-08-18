@@ -8,6 +8,7 @@ import (
 	"gblaquiere.dev/multi-org-billing-alert/internal/httperrors"
 	"gblaquiere.dev/multi-org-billing-alert/internal/notificationChannelApi"
 	"gblaquiere.dev/multi-org-billing-alert/model"
+	billing_state "gblaquiere.dev/multi-org-billing-alert/model/billing-state"
 	ressourceManager "google.golang.org/api/cloudresourcemanager/v3"
 	"google.golang.org/api/iterator"
 	budgetModel "google.golang.org/genproto/googleapis/cloud/billing/budgets/v1"
@@ -48,32 +49,35 @@ func init() {
 	}
 }
 
-func UpsertBillingAlert(ctx context.Context, message *model.BillingAlert) (err error) {
+func UpsertBillingAlert(ctx context.Context, message *model.BillingAlert) (billingAlert *model.BillingAlert, err error) {
 
 	//Check if the budgetApi exists
 	b, err := getExistingBillingAlert(ctx, getMessageName(message))
 
 	if err != nil {
-		return err
+		return
 	}
 
 	// Create or update accordingly
 	if b == nil {
 		//Create a new budget
-		err = createNewBudget(ctx, message)
+		b, err = createNewBudget(ctx, message)
 		if err != nil {
-			return err
+			return
 		}
 		log.Printf("Budget creation successful for the project %s \n", message.ProjectID)
 	} else {
 		//Update the retrieved budget
-		err = updateBudget(ctx, message, b)
+		b, err = updateBudget(ctx, message, b)
 		if err != nil {
-			return err
+			return
 		}
 		log.Printf("Budget update successful for the project %s \n", message.ProjectID)
 	}
-
+	billingAlert, err = createBillingAlertResponse(ctx, getMessageName(message), b)
+	if err != nil {
+		return
+	}
 	return
 }
 
@@ -106,7 +110,7 @@ func getExistingBillingAlert(ctx context.Context, alertName string) (b *budgetMo
 	return
 }
 
-func updateBudget(ctx context.Context, message *model.BillingAlert, b *budgetModel.Budget) (err error) {
+func updateBudget(ctx context.Context, message *model.BillingAlert, b *budgetModel.Budget) (budget *budgetModel.Budget, err error) {
 	updatedPath := updateBudgetAlert(b, message)
 	req := &budgetModel.UpdateBudgetRequest{
 		Budget: b,
@@ -114,15 +118,15 @@ func updateBudget(ctx context.Context, message *model.BillingAlert, b *budgetMod
 			Paths: updatedPath,
 		},
 	}
-	_, err = client.UpdateBudget(ctx, req)
+	budget, err = client.UpdateBudget(ctx, req)
 	if err != nil {
 		log.Printf("client.UpdateBudget: %+v\n", err)
-		return err
+		return
 	}
 	return
 }
 
-func createNewBudget(ctx context.Context, message *model.BillingAlert) (err error) {
+func createNewBudget(ctx context.Context, message *model.BillingAlert) (budget *budgetModel.Budget, err error) {
 	b := &budgetModel.Budget{ //Initiate a new budget alert object
 		DisplayName:    getDisplayName(getMessageName(message)),
 		ThresholdRules: defaultThresholds,
@@ -132,10 +136,10 @@ func createNewBudget(ctx context.Context, message *model.BillingAlert) (err erro
 		Parent: getBillingParent(),
 		Budget: b,
 	}
-	_, err = client.CreateBudget(ctx, req)
+	budget, err = client.CreateBudget(ctx, req)
 	if err != nil {
 		log.Printf("client.CreateBudget: %+v\n", err)
-		return err
+		return
 	}
 	return
 }
@@ -181,7 +185,7 @@ func updateBudgetAlert(b *budgetModel.Budget, message *model.BillingAlert) (upda
 
 	updatedPath = []string{ //Only these 2 fields to update. Can add more if required
 		"amount.specified_amount",
-		"notifications_rule",
+		"notifications_rule.monitoring_notification_channels",
 		"budget_filter.projects",
 	}
 
@@ -221,32 +225,39 @@ func GetBillingAlert(ctx context.Context, alertName string) (billingAlert *model
 		return
 	}
 
+	billingAlert, err = createBillingAlertResponse(ctx, alertName, b)
+	return
+}
+
+func createBillingAlertResponse(ctx context.Context, alertName string, budget *budgetModel.Budget) (billingAlert *model.BillingAlert, err error) {
 	//Prepare response
-	emails, err := getEmailList(ctx, b)
+	fmt.Println(len(budget.NotificationsRule.MonitoringNotificationChannels))
+	emails, err := getEmailList(ctx, budget)
 	if err != nil {
 		return
 	}
+	fmt.Println(len(emails))
 
 	billingAlert = &model.BillingAlert{
-		MonthlyBudget: float32(b.Amount.GetSpecifiedAmount().Units) + (float32(b.Amount.GetSpecifiedAmount().Nanos) / 1000000000),
+		MonthlyBudget: float32(budget.Amount.GetSpecifiedAmount().Units) + (float32(budget.Amount.GetSpecifiedAmount().Nanos) / 1000000000),
 		Emails:        emails,
-		Thresholds:    getThresholds(b),
+		Thresholds:    getThresholds(budget),
 	}
 
-	if len(b.BudgetFilter.GetProjects()) > 1 {
-		projectList, err := getProjectIds(ctx, b.BudgetFilter.Projects)
-		if err != nil {
-			return billingAlert, err
-		}
-		g := &model.GroupAlert{
+	projectList, err := getProjectIds(ctx, budget.BudgetFilter.Projects)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(budget.BudgetFilter.GetProjects()) > 1 ||
+		(len(budget.BudgetFilter.GetProjects()) == 1 && projectList[0] != alertName) {
+		billingAlert.GroupAlert = &model.GroupAlert{
 			ProjectIds: projectList,
 			AlertName:  alertName,
 		}
-		billingAlert.GroupAlert = g
 	} else {
-		billingAlert.ProjectID = alertName
+		billingAlert.ProjectID = projectList[0]
 	}
-
 	return
 }
 
@@ -254,10 +265,11 @@ func getProjectIds(ctx context.Context, projects []string) (projectList []string
 	for _, project := range projects {
 		p, err := clientResourceManager.Projects.Get(project).Context(ctx).Do()
 		if err != nil {
-			log.Printf("resourceManager.GetProject: %+v\n", err)
-			return projectList, err
+			log.Printf("resourceManager.GetProject: %+v; deleted?\n", err)
+			projectList = append(projectList, fmt.Sprintf("%s (unknown)", project))
+		} else {
+			projectList = append(projectList, p.ProjectId)
 		}
-		projectList = append(projectList, p.ProjectId)
 	}
 	return
 }
@@ -281,19 +293,34 @@ func getEmailList(ctx context.Context, b *budgetModel.Budget) (emailList []strin
 	return
 }
 
-func DeleteBillingAlert(ctx context.Context, alertName string) (err error) {
+func DeleteBillingAlert(ctx context.Context, alertName string) (billingAlert *model.BillingAlert, err error) {
 	b, err := getExistingBillingAlert(ctx, alertName)
 	if err != nil {
-		return httperrors.New(err, http.StatusInternalServerError)
+		return nil, httperrors.New(err, http.StatusInternalServerError)
 	}
 
 	if b == nil {
-		return httperrors.New(errors.New(fmt.Sprintf("projectid %q does not exist", alertName)), http.StatusNotFound)
+		return nil, httperrors.New(errors.New(fmt.Sprintf("projectid %q does not exist", alertName)), http.StatusNotFound)
+	}
+
+	//Prepare the response
+	billingAlert, err = createBillingAlertResponse(ctx, alertName, b)
+
+	if err != nil {
+		return nil, httperrors.New(err, http.StatusInternalServerError)
 	}
 
 	req := &budgetModel.DeleteBudgetRequest{
 		Name: b.Name,
 	}
 	err = client.DeleteBudget(ctx, req)
+
+	if err != nil {
+		return nil, httperrors.New(err, http.StatusInternalServerError)
+	}
+
+	//Update state
+	billingAlert.State = billing_state.Deleted
+
 	return
 }

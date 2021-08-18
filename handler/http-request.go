@@ -29,12 +29,15 @@ func DeleteBudgetAlert(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = internal.DeleteBillingAlert(r.Context(), name)
+	billingAlert, err := internal.DeleteBillingAlert(r.Context(), name)
 	if err != nil {
 		log.Printf("internal.DeleteBillingAlert: %v\n", err)
 		http.Error(w, err.Error(), httperrors.GetHttpCode(err))
 		return
 	}
+
+	w.WriteHeader(http.StatusOK)
+	formatResponse(w, billingAlert)
 }
 
 func GetBudgetAlert(w http.ResponseWriter, r *http.Request) {
@@ -53,14 +56,8 @@ func GetBudgetAlert(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	json, err := json.Marshal(billingAlert)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	w.Write(json)
+	formatResponse(w, billingAlert)
 }
 
 func getAlertName(r *http.Request) (name string, err error) {
@@ -96,11 +93,18 @@ func UpsertBudgetAlert(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = internal.CreateBillingAlert(r.Context(), &billing)
+	billingAlert, err := internal.CreateBillingAlert(r.Context(), &billing)
 	if err != nil {
 		log.Printf("internal.CreateBillingAlert: %v\n", err)
 		http.Error(w, err.Error(), httperrors.GetHttpCode(err))
 		return
 	}
 	w.WriteHeader(http.StatusCreated)
+	formatResponse(w, billingAlert)
+}
+
+func formatResponse(w http.ResponseWriter, billingAlert *model.BillingAlert) {
+	billingAlertJson, _ := json.Marshal(billingAlert)
+	fmt.Fprint(w, string(billingAlertJson))
+	w.Header().Add("Content-type", "application/json")
 }
