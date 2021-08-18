@@ -14,7 +14,8 @@ This workaround exists because of Google Cloud Billing limitations. See my [arti
 
 # How to use
 
-The latest built image is present at this location: `us-central1-docker.pkg.dev/gblaquiere-dev/public/multi-org-billing-alert:1.3`
+The latest built image is present at this
+location: `us-central1-docker.pkg.dev/gblaquiere-dev/public/multi-org-billing-alert:1.4`
 
 ## JSON format
 
@@ -68,7 +69,7 @@ You it directly in your Cloud Run deployment
 
 ```
 gcloud run deploy multi-org-billing-alert \
-  --image=us-central1-docker.pkg.dev/gblaquiere-dev/public/multi-org-billing-alert:1.1 \
+  --image=us-central1-docker.pkg.dev/gblaquiere-dev/public/multi-org-billing-alert:1.4 \
   --region=us-central1 \
   --service-account=serviceAccount:multi-org-billing@<PROJECT_ID>.iam.gserviceaccount.com \
   --platform=managed
