@@ -20,6 +20,10 @@ resource "google_cloud_run_service" "multi_org" {
     }
   }
 
+  metadata {
+    labels = var.cloud_run_labels
+  }
+
   traffic {
     percent         = 100
     latest_revision = true

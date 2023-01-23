@@ -1,6 +1,7 @@
 resource "google_pubsub_topic" "multi_org_billing" {
   name    = var.pubsub_topic_name
   project = var.runtime_project
+  labels  = var.pubsub_topic_labels
 }
 
 resource "google_pubsub_subscription" "multi_org_billing" {

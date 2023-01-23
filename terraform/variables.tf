@@ -48,3 +48,15 @@ variable "pubsub_subscription_name" {
   type    = string
   default = "multi-org-billing-alert-subscription"
 }
+
+variable "cloud_run_labels" {
+  description = "Map of string keys and values that can be used to organize and categorize (scope and select) objects."
+  type        = map(string)
+  default     = {}
+}
+
+variable "pubsub_topic_labels" {
+  description = "Map of string keys and values that can be used to organize and categorize (scope and select) objects."
+  type        = map(string)
+  default     = {}
+}
