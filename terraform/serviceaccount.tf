@@ -12,7 +12,6 @@ resource "google_project_iam_binding" "project" {
 }
 
 resource "google_billing_account_iam_member" "billing_account_admin" {
-  provider           = google-beta
   billing_account_id = var.billing_account
   role               = "roles/billing.admin"
   member             = "serviceAccount:${google_service_account.cloud_run.email}"
