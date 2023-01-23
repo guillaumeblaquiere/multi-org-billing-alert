@@ -1,17 +1,17 @@
 // REQUIRED variables
 
 // The project that will host the resources (service account, pubsub, cloud run)
-runtime_project=""
+runtime_project = ""
 // The project that will host the notification channel email (for sending emails)
-billing_project=""
+billing_project = ""
 // The billing account on which to create the budget alerts
-billing_account=""
+billing_account = ""
 // The list of authorized account (user, service or group) to access to Cloud Run and PubSub topic to publish message.
 // The fully qualified account format is required. For example
 //  * user:user@email.com
 //  * group:group@email.com
 //  * serviceAccount:sa@email.com
-members=[]
+members = []
 
 
 // OPTIONAL variables

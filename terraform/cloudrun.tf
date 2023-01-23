@@ -1,6 +1,6 @@
 resource "google_cloud_run_service" "multi_org" {
-  name = var.cloud_run_service_name
-  project = var.runtime_project
+  name     = var.cloud_run_service_name
+  project  = var.runtime_project
   location = var.region
 
   template {
@@ -8,11 +8,11 @@ resource "google_cloud_run_service" "multi_org" {
       containers {
         image = var.image_tag
         env {
-          name = "BILLING_ACCOUNT"
+          name  = "BILLING_ACCOUNT"
           value = var.billing_account
         }
         env {
-          name = "BILLING_PROJECT"
+          name  = "BILLING_PROJECT"
           value = var.billing_project
         }
       }
@@ -21,7 +21,7 @@ resource "google_cloud_run_service" "multi_org" {
   }
 
   traffic {
-    percent = 100
+    percent         = 100
     latest_revision = true
   }
   depends_on = [google_project_service.cloudrun]
@@ -29,8 +29,8 @@ resource "google_cloud_run_service" "multi_org" {
 
 resource "google_cloud_run_service_iam_binding" "binding" {
   location = google_cloud_run_service.multi_org.location
-  project = google_cloud_run_service.multi_org.project
-  service = google_cloud_run_service.multi_org.name
-  role = "roles/run.invoker"
+  project  = google_cloud_run_service.multi_org.project
+  service  = google_cloud_run_service.multi_org.name
+  role     = "roles/run.invoker"
   members  = concat(var.members, ["serviceAccount:${google_service_account.pubsub.email}"])
 }
