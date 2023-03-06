@@ -3,6 +3,8 @@ resource "google_cloud_run_service" "multi_org" {
   project  = var.runtime_project
   location = var.region
 
+  autogenerate_revision_name = true
+
   template {
     spec {
       containers {
